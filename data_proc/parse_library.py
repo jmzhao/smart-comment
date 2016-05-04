@@ -12,7 +12,7 @@ import inspect, dis
 import pkgutil
 import importlib
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def get_info(entity, module) :
     """
@@ -44,11 +44,11 @@ def get_library_info(libname, module_filter=None) :
                                                       #onerror=lambda x: None
                                                       ):
         if not module_filter(modname) : continue
-        logging.debug('get_library_info: come with module %s'%(modname)) 
+        logging.info('get_library_info: come with module %s'%(modname)) 
 #        sub = importlib.import_module(modname)
         try :                                              
             sub = importlib.import_module(modname)
-        except ImportError as e :
+        except Exception as e :
             logging.warn(str(e))
 #            warnings.warn(e.msg, ImportWarning)
             continue
@@ -57,17 +57,38 @@ def get_library_info(libname, module_filter=None) :
         l.append(d)
     return {'lib' : package, 'sub' : l}
 
+stop_module_names = ('test', 'tests', 'testing')
+
 interested_libs = [
-    ('sklearn', lambda mn : mn.split('.')[1] not in ('externals',)), 
-    ('numpy', lambda mn : mn.split('.')[1] not in ('distutils',)), 
+    ('sklearn', 
+     lambda mn : (
+        mn.split('.')[1] not in ('externals',) 
+        and all(word not in mn.split('.') for word in stop_module_names))), 
+    ('numpy', 
+     lambda mn : (
+        mn.split('.')[1] not in ('distutils', 'f2py') 
+        and all(word not in mn.split('.') for word in stop_module_names))), 
     ('scipy', None),
 ]
 
-def main() :
+def gather(interested_libs) :
     info = dict()
     for lib_name, module_filter in interested_libs :
         info[lib_name] = get_library_info(lib_name, module_filter)
     return info
     
+def serialize_info(info) :
+    l = [info['entity']]
+    for sub_info in info['sub'] :
+        l.extend(serialize_info(sub_info))
+    return l
+    
+def serialize_library_info(lib_info) :
+    l = []
+    for entity_info in lib_info['sub'] :
+        l.extend(serialize_info(entity_info))
+    return l
+    
 if __name__ == '__main__' :
-    get_library_info('numpy')
+    d = gather(interested_libs)
+    l = [serialize_library_info(lib_info) for lib, lib_info in d.items()]

@@ -91,4 +91,4 @@ def serialize_library_info(lib_info) :
     
 if __name__ == '__main__' :
     d = gather(interested_libs)
-    l = [serialize_library_info(lib_info) for lib, lib_info in d.items()]
+    l = [serialize_library_info(d[lib_name]) for lib_name, _ in interested_libs]

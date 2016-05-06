@@ -68,40 +68,6 @@ def remove_infrequent(texts, n_times) :
     return texts
 
 
-texts = simple_process(documents=documents, stoplist=read_stoplist(FNAME_STOPLIST))
-texts = remove_infrequent(texts, n_times=1)
-
-dictionary = g.corpora.Dictionary(texts)
-dictionary.save('/tmp/deerwester.dict') # store the dictionary, for future reference
-#print(dictionary)
-
-corpus = [dictionary.doc2bow(text) for text in texts]
-g.corpora.MmCorpus.serialize('/tmp/deerwester.mm', corpus) # store to disk, for later use
-#print(corpus)
-
-# load id->word mapping (the dictionary), one of the results of step 2 above
-id2word = dictionary #g.g.corpora.Dictionary.load_from_text('wiki_en_wordids.txt')
-# load corpus iterator
-mm = g.corpora.MmCorpus('/tmp/deerwester.mm')
-# mm = g.g.corpora.MmCorpus(bz2.BZ2File('wiki_en_tfidf.mm.bz2')) # use this if you compressed the TFIDF output (recommended)
-
-print(mm)
-
-# extract 100 LDA topics, using 1 pass and updating once every 1 chunk (10,000 documents)
-lda = g.models.ldamodel.LdaModel(corpus=mm, id2word=id2word, num_topics=20, 
-                                 update_every=1, chunksize=10000, passes=5)
-# print the most contributing words for 20 randomly selected topics
-print(*lda.print_topics(20), sep='\n')
-
-index = g.similarities.SparseMatrixSimilarity(lda[corpus], num_features=22)
-sims = index[lda[dictionary.doc2bow(texts[51])]]
-print(list(sorted(enumerate(sims), key=lambda t : t[1], reverse=True))[:10])
-
-## extract 400 LSI topics; use the default one-pass algorithm
-#lsi = g.models.lsimodel.LsiModel(corpus=mm, id2word=id2word, num_topics=400)
-#
-## print the most contributing words (both positively and negatively) for each of the first ten topics
-#lsi.print_topics(10)
 
 if __name__ == '__main__' :
     pass

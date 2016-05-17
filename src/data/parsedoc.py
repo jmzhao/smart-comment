@@ -24,7 +24,7 @@ SIMPLE = 0
 ADVANCED = 1
 CONCAT = 2
 
-def extract(doc_str, stage) :
+def extract(doc_str, stage=ADVANCED) :
     """
     Get the first "paragraph" in a Python documentation string by passing 
     various stages.
